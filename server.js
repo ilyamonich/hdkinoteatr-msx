@@ -9,35 +9,35 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Папка для кэша (не обязательна)
 const cacheDir = path.join(__dirname, 'cache');
 if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
 
-// Middleware
-const corsOptions = {
+// CORS – разрешаем всё для теста
+app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Range', 'User-Agent', 'Origin', 'Accept'],
-  credentials: true,
-};
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+  allowedHeaders: ['Content-Type', 'Range', 'User-Agent', 'Origin', 'Accept']
+}));
+app.options('*', cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Логирование
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
 
-// API роуты
+// Подключаем API (поиск, информация, видео и т.д.)
 const apiRouter = require('./routes/api');
 app.use('/api', apiRouter);
 
-// ---------- ВОЗВРАЩАЕМ МАССИВ (как ожидает MSX) ----------
+// ---------- ФОРМИРОВАНИЕ СТАРТОВОГО ПАРАМЕТРА (МАССИВ) ----------
 const getStartParameter = (req) => [
   {
-    name: "hdkinoteatr_main",
+    name: "hdkinoteatr_main",        // обязательно!
     title: "HDKinoteatr Media",
     menu: [
       {
@@ -79,42 +79,51 @@ const getStartParameter = (req) => [
   }
 ];
 
-// Маршруты для MSX
-app.get('/', (req, res) => {
+// ---------- МАРШРУТЫ ДЛЯ MSX ----------
+// Функция для отправки ответа с правильными заголовками
+const sendStartParameter = (req, res) => {
+  const data = getStartParameter(req);
   res.setHeader('Content-Type', 'application/json');
-  res.json(getStartParameter(req));
-});
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.json(data);
+};
 
-app.get('/start', (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.json(getStartParameter(req));
-});
+// Все возможные пути, по которым MSX может запрашивать start parameter
+app.get('/', sendStartParameter);
+app.get('/start', sendStartParameter);
+app.get('/msx/start.json', sendStartParameter);
+app.get('/msx/start', sendStartParameter);
 
+// Дополнительно: обработка запросов с любыми query-параметрами (например, ?v=...)
 app.get('/msx/start.json', (req, res) => {
-  console.log('[MSX] Запрос start.json получен');
-  const response = getStartParameter(req);
-  console.log('[MSX] Ответ:', JSON.stringify(response, null, 2));
-  res.setHeader('Content-Type', 'application/json');
-  res.json(response);
+  console.log('[MSX] Запрос start.json с параметрами:', req.query);
+  sendStartParameter(req, res);
 });
 
+// Проверка статуса
 app.get('/status', (req, res) => {
   res.json({ success: true, status: 'online', timestamp: Date.now() });
 });
 
-// 404
+// Отладка: сырой JSON
+app.get('/debug', (req, res) => {
+  res.json(getStartParameter(req));
+});
+
+// 404 для всего остального
 app.use((req, res) => {
   console.log(`[404] ${req.method} ${req.url}`);
   res.status(404).json({ success: false, error: 'Endpoint not found' });
 });
 
-// Ошибки
+// Глобальная обработка ошибок
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
   res.status(500).json({ success: false, error: 'Внутренняя ошибка сервера' });
 });
 
+// Запуск
 app.listen(PORT, () => {
   console.log(`✅ Сервер запущен на http://localhost:${PORT}`);
-  console.log(`📡 Стартовый параметр: http://localhost:${PORT}/msx/start.json`);
+  console.log(`📡 Стартовый параметр MSX: http://localhost:${PORT}/msx/start.json`);
 });
