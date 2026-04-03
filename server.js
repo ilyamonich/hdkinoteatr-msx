@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const path = require('path');
 
 dotenv.config();
 const app = express();
@@ -18,23 +17,32 @@ app.use((req, res, next) => {
   next();
 });
 
-// Раздача статических файлов из папки msx
-app.use('/msx', express.static(path.join(__dirname, 'msx')));
-
-// API роуты
+// API роуты (поиск, популярное, информация, видео)
 const apiRouter = require('./routes/api');
 app.use('/api', apiRouter);
 
 const SERVER_URL = process.env.SERVER_URL || 'https://hdkinoteatr-msx.onrender.com';
 
+// Стартовый параметр – только поиск (без parameter)
 const startParameter = {
-  name: "HDKinoteatr Media",
-  image: `${SERVER_URL}/msx/icon.png`, // если нет иконки – удалите эту строку
+  name: "hdkinoteatr_main",
   version: "1.0",
-  parameter: `content:${SERVER_URL}/msx/content.json`
+  title: "HDKinoteatr Media",
+  menu: [
+    {
+      id: "search",
+      title: "🔍 Поиск фильмов и сериалов",
+      icon: "search",
+      action: "input",
+      input: {
+        prompt: "Введите название",
+        submit: "/api/search?q={query}"
+      }
+    }
+  ]
 };
 
-// Стартовый параметр
+// Маршруты для стартового параметра
 app.get(['/', '/start', '/msx/start', '/msx/start.json'], (req, res) => {
   console.log('[MSX] Запрос start parameter');
   res.setHeader('Content-Type', 'application/json');
