@@ -17,16 +17,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// API роуты (поиск, популярное и т.д.) – они остаются без изменений
+// API роуты (поиск, популярное и т.д.)
 const apiRouter = require('./routes/api');
 app.use('/api', apiRouter);
 
-// ---------- СТАРТОВЫЙ ПАРАМЕТР (как в рабочей ссылке) ----------
+// ---------- СТАРТОВЫЙ ПАРАМЕТР (с префиксом content:) ----------
 const startParameter = {
   name: "HDKinoteatr Media",
-  image: "https://hdkinoteatr-msx.onrender.com/icon.png", // Замените на реальную иконку, если есть
+  image: "https://hdkinoteatr-msx.onrender.com/icon.png", // можно заменить на реальную иконку
   version: "1.0",
-  parameter: "/api/main"   // Относительная ссылка на основной контент
+  parameter: "content:/api/main"   // ✅ ОБЯЗАТЕЛЬНЫЙ ПРЕФИКС
 };
 
 // ---------- ОСНОВНОЙ КОНТЕНТ (меню) ----------
