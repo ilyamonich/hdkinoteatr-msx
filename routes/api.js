@@ -23,7 +23,7 @@ function getOrFetch(key, fetcher, ttl = CACHE_TTL) {
   });
 }
 
-// Поиск – возвращает список
+// Поиск
 router.get('/search', async (req, res) => {
   const query = req.query.q?.trim();
   if (!query) {
@@ -38,68 +38,58 @@ router.get('/search', async (req, res) => {
       type: "control",
       label: item.title,
       icon: item.poster || "movie",
-      action: "open",
+      action: "load",
       url: `/api/info?url=${encodeURIComponent(item.url)}`
     }));
     return { type: "list", items };
   });
-  if (!data) {
-    return res.status(500).json({ error: 'Ошибка парсинга поиска' });
-  }
+  if (!data) return res.status(500).json({ error: 'Ошибка парсинга поиска' });
   res.json(data);
 });
 
 // Информация о фильме/сериале
 router.get('/info', async (req, res) => {
   let url = req.query.url;
-  if (!url) {
-    return res.status(400).json({ error: 'Параметр url обязателен' });
-  }
+  if (!url) return res.status(400).json({ error: 'Параметр url обязателен' });
   url = normalizeUrl(url);
   const cacheKey = `info_${url}`;
   const data = await getOrFetch(cacheKey, async () => {
     const html = await fetchHtml(url);
     if (!html) throw new Error('Страница не загружена');
-    const content = parseContentPage(html, url);
-    return content;
+    return parseContentPage(html, url);
   });
-  if (!data) {
-    return res.status(500).json({ error: 'Не удалось получить информацию' });
-  }
+  if (!data) return res.status(500).json({ error: 'Не удалось получить информацию' });
+
   if (data.type === 'movie') {
     res.json({
       type: "movie",
       title: data.title,
       description: data.description,
       poster: data.poster,
-      actions: [
-        {
-          label: "▶ Смотреть",
-          action: "play",
-          url: `/api/video-url?url=${encodeURIComponent(data.videoPageUrl)}`
-        }
-      ]
+      actions: [{
+        label: "▶ Смотреть",
+        action: "play",
+        url: `/api/video-url?url=${encodeURIComponent(data.videoPageUrl)}`
+      }]
     });
   } else {
-    let episodesList = [];
+    let items = [];
     for (const season of data.seasons) {
-      episodesList.push({
-        type: "control",
-        label: `Сезон ${season.num}`,
-        items: season.episodes.map(ep => ({
+      for (const ep of season.episodes) {
+        items.push({
           type: "control",
-          label: `${ep.num}. ${ep.title}`,
+          label: `${season.num}x${ep.num}: ${ep.title}`,
           action: "play",
           url: `/api/video-url?url=${encodeURIComponent(ep.url)}`
-        }))
-      });
+        });
+      }
     }
     res.json({
       type: "list",
       title: data.title,
       description: data.description,
       poster: data.poster,
-      items: episodesList
+      items
     });
   }
 });
@@ -107,9 +97,7 @@ router.get('/info', async (req, res) => {
 // Получение прямой видео-ссылки
 router.get('/video-url', async (req, res) => {
   let playerUrl = req.query.url;
-  if (!playerUrl) {
-    return res.status(400).json({ error: 'Параметр url обязателен' });
-  }
+  if (!playerUrl) return res.status(400).json({ error: 'Параметр url обязателен' });
   playerUrl = normalizeUrl(playerUrl);
   const cacheKey = `video_${playerUrl}`;
   const videoUrl = await getOrFetch(cacheKey, async () => {
@@ -119,18 +107,16 @@ router.get('/video-url', async (req, res) => {
     if (!url) throw new Error('Не найдена видео-ссылка');
     return url;
   }, CACHE_TTL);
-  if (!videoUrl) {
-    return res.status(404).json({ error: 'Не удалось извлечь видео' });
-  }
+  if (!videoUrl) return res.status(404).json({ error: 'Не удалось извлечь видео' });
   res.json({ videoUrl });
 });
 
-// Прокси видео
+// Прокси видео (обход CORS)
 router.get('/proxy/video', async (req, res) => {
   const videoUrl = req.query.url;
   if (!videoUrl) return res.status(400).json({ error: 'Не указан параметр url' });
   if (!videoUrl.match(/\.(m3u8|mp4|webm|mkv|ts)$/i) && !videoUrl.includes('/manifest')) {
-    return res.status(400). json({ error: 'Неподдерживаемый формат видео' });
+    return res.status(400).json({ error: 'Неподдерживаемый формат видео' });
   }
   const rangeHeader = req.headers.range;
   const result = await fetchBinary(videoUrl, rangeHeader);
@@ -144,7 +130,7 @@ router.get('/proxy/video', async (req, res) => {
   res.status(rangeHeader ? 206 : 200).send(data);
 });
 
-// Популярное (список фильмов)
+// Популярное
 router.get('/popular', async (req, res) => {
   const cacheKey = 'popular_main';
   const data = await getOrFetch(cacheKey, async () => {
@@ -161,7 +147,7 @@ router.get('/popular', async (req, res) => {
           type: "control",
           label: title,
           icon: poster || "movie",
-          action: "open",
+          action: "load",
           url: `/api/info?url=${encodeURIComponent(url)}`
         });
       }
@@ -180,16 +166,16 @@ router.get('/category/movies', async (req, res) => {
       {
         type: "control",
         label: "🔍 Поиск фильмов",
-        action: "search",
-        search: {
+        action: "input",
+        input: {
           prompt: "Название фильма",
-          url: "/api/search?q={query}"
+          submit: "/api/search?q={query}"
         }
       },
       {
         type: "control",
         label: "🔥 Популярные фильмы",
-        action: "open",
+        action: "load",
         url: "/api/popular"
       }
     ]
@@ -204,10 +190,10 @@ router.get('/category/series', async (req, res) => {
       {
         type: "control",
         label: "🔍 Поиск сериалов",
-        action: "search",
-        search: {
+        action: "input",
+        input: {
           prompt: "Название сериала",
-          url: "/api/search?q={query}"
+          submit: "/api/search?q={query}"
         }
       }
     ]
