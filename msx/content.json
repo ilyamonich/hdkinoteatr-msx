@@ -8,18 +8,18 @@
     {
       "type": "control",
       "offset": "0,0,0,0",
-      "action": "search",
+      "action": "input",
       "label": "🔍 Поиск фильмов и сериалов",
       "icon": "search",
-      "search": {
+      "input": {
         "prompt": "Введите название",
-        "url": "/api/search?q={query}"
+        "submit": "/api/search?q={query}"
       }
     },
     {
       "type": "control",
       "offset": "0,1,0,0",
-      "action": "open",
+      "action": "load",
       "label": "🔥 Популярное",
       "icon": "trending_up",
       "url": "/api/popular"
@@ -27,7 +27,7 @@
     {
       "type": "control",
       "offset": "0,2,0,0",
-      "action": "open",
+      "action": "load",
       "label": "🎬 Фильмы",
       "icon": "movie",
       "url": "/api/category/movies"
@@ -35,7 +35,7 @@
     {
       "type": "control",
       "offset": "0,3,0,0",
-      "action": "open",
+      "action": "load",
       "label": "📺 Сериалы",
       "icon": "tv",
       "url": "/api/category/series"
