@@ -37,16 +37,24 @@ router.get('/search', async (req, res) => {
     const html = await fetchHtml(searchUrl);
     if (!html) throw new Error('Не удалось загрузить поиск');
     const results = parseSearchResults(html);
-    return { results };
+    // Преобразуем в формат, понятный MSX (список элементов с action)
+    const items = results.map(item => ({
+      title: item.title,
+      subtitle: item.year,
+      poster: item.poster,
+      action: "load",
+      url: `/api/info?url=${encodeURIComponent(item.url)}`
+    }));
+    return { items };
   });
   
   if (!data) {
     return res.status(500).json({ success: false, error: 'Ошибка парсинга поиска' });
   }
-  res.json({ success: true, results: data.results });
+  res.json({ success: true, items: data.items });
 });
 
-// ---------------------- Информация ----------------------
+// ---------------------- Информация о фильме/сериале ----------------------
 router.get('/info', async (req, res) => {
   let url = req.query.url;
   if (!url) {
@@ -65,7 +73,45 @@ router.get('/info', async (req, res) => {
   if (!data) {
     return res.status(500).json({ success: false, error: 'Не удалось получить информацию' });
   }
-  res.json({ success: true, ...data });
+  
+  // Формируем ответ для MSX
+  if (data.type === 'movie') {
+    // Фильм: сразу показываем кнопку "Смотреть"
+    res.json({
+      success: true,
+      title: data.title,
+      description: data.description,
+      poster: data.poster,
+      actions: [
+        {
+          title: "▶ Смотреть",
+          action: "play",
+          url: `/api/video-url?url=${encodeURIComponent(data.videoPageUrl)}`
+        }
+      ]
+    });
+  } else {
+    // Сериал: список сезонов и эпизодов
+    const seasonsItems = [];
+    for (const season of data.seasons) {
+      const episodesItems = season.episodes.map(ep => ({
+        title: `Серия ${ep.num}: ${ep.title}`,
+        action: "play",
+        url: `/api/video-url?url=${encodeURIComponent(ep.url)}`
+      }));
+      seasonsItems.push({
+        title: `Сезон ${season.num}`,
+        items: episodesItems
+      });
+    }
+    res.json({
+      success: true,
+      title: data.title,
+      description: data.description,
+      poster: data.poster,
+      seasons: seasonsItems
+    });
+  }
 });
 
 // ---------------------- Получение прямой видео-ссылки ----------------------
@@ -88,6 +134,7 @@ router.get('/video-url', async (req, res) => {
   if (!videoUrl) {
     return res.status(404).json({ success: false, error: 'Не удалось извлечь видео' });
   }
+  // MSX ожидает прямую ссылку для встраивания в плеер
   res.json({ success: true, videoUrl });
 });
 
@@ -98,12 +145,10 @@ router.get('/proxy/video', async (req, res) => {
     return res.status(400).json({ success: false, error: 'Не указан параметр url' });
   }
   
-  // Проверяем, что ссылка ведёт на медиафайл (базовая защита)
   if (!videoUrl.match(/\.(m3u8|mp4|webm|mkv|ts)$/i) && !videoUrl.includes('/manifest')) {
     return res.status(400).json({ success: false, error: 'Неподдерживаемый формат видео' });
   }
   
-  // Обработка Range заголовков (для перемотки)
   const rangeHeader = req.headers.range;
   const result = await fetchBinary(videoUrl, rangeHeader);
   if (!result) {
@@ -118,6 +163,78 @@ router.get('/proxy/video', async (req, res) => {
   res.setHeader('Cache-Control', 'public, max-age=86400');
   
   res.status(rangeHeader ? 206 : 200).send(data);
+});
+
+// ---------------------- Популярное (парсим главную) ----------------------
+router.get('/popular', async (req, res) => {
+  const cacheKey = 'popular_main';
+  const data = await getOrFetch(cacheKey, async () => {
+    const html = await fetchHtml(BASE_URL);
+    if (!html) throw new Error('Не удалось загрузить главную страницу');
+    const $ = require('cheerio').load(html);
+    const items = [];
+    $('.short-item, .movie-item, .film-item').slice(0, 12).each((i, el) => {
+      const title = $(el).find('.title a, h3 a').first().text().trim();
+      const url = $(el).find('.title a, h3 a').first().attr('href');
+      const poster = $(el).find('img').attr('src');
+      if (title && url) {
+        items.push({
+          title: title,
+          poster: poster,
+          action: "load",
+          url: `/api/info?url=${encodeURIComponent(url)}`
+        });
+      }
+    });
+    return { items };
+  });
+  
+  if (!data) {
+    return res.status(500).json({ success: false, error: 'Ошибка загрузки популярного' });
+  }
+  res.json({ success: true, items: data.items });
+});
+
+// ---------------------- Категория "Фильмы" ----------------------
+router.get('/category/movies', async (req, res) => {
+  // Можно просто предложить поиск, либо парсить раздел /movies/
+  res.json({
+    success: true,
+    title: "Фильмы",
+    items: [
+      {
+        title: "🔍 Поиск фильмов",
+        action: "input",
+        input: {
+          prompt: "Название фильма",
+          submit: "/api/search?q={query}"
+        }
+      },
+      {
+        title: "🔥 Популярные фильмы",
+        action: "load",
+        url: "/api/popular"
+      }
+    ]
+  });
+});
+
+// ---------------------- Категория "Сериалы" ----------------------
+router.get('/category/series', async (req, res) => {
+  res.json({
+    success: true,
+    title: "Сериалы",
+    items: [
+      {
+        title: "🔍 Поиск сериалов",
+        action: "input",
+        input: {
+          prompt: "Название сериала",
+          submit: "/api/search?q={query}"
+        }
+      }
+    ]
+  });
 });
 
 module.exports = router;
