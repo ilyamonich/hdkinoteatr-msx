@@ -17,16 +17,21 @@ app.use((req, res, next) => {
   next();
 });
 
-// API роуты (поиск, популярное и т.д.)
+// API роуты (поиск, популярное и т.д.) – они остаются без изменений
 const apiRouter = require('./routes/api');
 app.use('/api', apiRouter);
 
-// ---------- СТАРТОВЫЙ ПАРАМЕТР (МАССИВ) ----------
-const startParameter = [
-  {
-    name: "hdkinoteatr_main",        // обязательно
-    version: "1.0",                  // обязательно
-    title: "HDKinoteatr Media",
+// ---------- СТАРТОВЫЙ ПАРАМЕТР (как в рабочей ссылке) ----------
+const startParameter = {
+  name: "HDKinoteatr Media",
+  image: "https://hdkinoteatr-msx.onrender.com/icon.png", // Замените на реальную иконку, если есть
+  version: "1.0",
+  parameter: "/api/main"   // Относительная ссылка на основной контент
+};
+
+// ---------- ОСНОВНОЙ КОНТЕНТ (меню) ----------
+app.get('/api/main', (req, res) => {
+  const mainContent = {
     menu: [
       {
         id: "search",
@@ -64,17 +69,18 @@ const startParameter = [
       serverUrl: "https://hdkinoteatr-msx.onrender.com",
       cacheTTL: 300
     }
-  }
-];
+  };
+  res.json(mainContent);
+});
 
-// Маршруты для запроса стартового параметра
+// Маршруты для стартового параметра
 app.get(['/', '/start', '/msx/start', '/msx/start.json'], (req, res) => {
-  console.log('[MSX] Запрос start parameter (массив)');
+  console.log('[MSX] Запрос start parameter');
   res.setHeader('Content-Type', 'application/json');
   res.json(startParameter);
 });
 
-// Отладочный эндпоинт
+// Отладка
 app.get('/debug', (req, res) => {
   res.json(startParameter);
 });
