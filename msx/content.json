@@ -1,0 +1,32 @@
+{
+  "type": "list",
+  "items": [
+    {
+      "label": "🔍 Поиск фильмов и сериалов",
+      "icon": "search",
+      "action": "input",
+      "input": {
+        "prompt": "Введите название",
+        "submit": "/api/search?q={query}"
+      }
+    },
+    {
+      "label": "🔥 Популярное",
+      "icon": "trending_up",
+      "action": "load",
+      "url": "/api/popular"
+    },
+    {
+      "label": "🎬 Фильмы",
+      "icon": "movie",
+      "action": "load",
+      "url": "/api/category/movies"
+    },
+    {
+      "label": "📺 Сериалы",
+      "icon": "tv",
+      "action": "load",
+      "url": "/api/category/series"
+    }
+  ]
+}
