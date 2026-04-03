@@ -9,16 +9,25 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Создаём папку для кэша (если нужна, но мы используем memory-cache)
+// Создаём папку для кэша (если нужна)
 const cacheDir = path.join(__dirname, 'cache');
 if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
 
-// Middleware
-app.use(cors());
+// ---------- Middleware ----------
+// Настройка CORS для любых источников (для теста)
+const corsOptions = {
+  origin: '*',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Range', 'User-Agent', 'Origin', 'Accept'],
+  credentials: true,
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Логирование запросов
+// Логирование всех запросов (полезно для отладки)
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
@@ -28,8 +37,7 @@ app.use((req, res, next) => {
 const apiRouter = require('./routes/api');
 app.use('/api', apiRouter);
 
-// ---------- СТАРТОВЫЙ ПАРАМЕТР ДЛЯ MEDIA STATION X ----------
-// Этот маршрут будет вызван MSX при запуске (обычно GET / или /start)
+// ---------- Функция формирования стартового параметра для MSX ----------
 const getStartParameter = (req) => ({
   version: "1.0",
   title: "HDKinoteatr Media",
@@ -72,23 +80,36 @@ const getStartParameter = (req) => ({
   }
 });
 
-// Корневой маршрут (для проверки и для MSX)
+// ---------- Маршруты для Media Station X ----------
+// Корень (может использоваться для проверки)
 app.get('/', (req, res) => {
   res.json(getStartParameter(req));
 });
 
-// Отдельный маршрут /start (часто используется в MSX)
+// /start (некоторые версии MSX)
 app.get('/start', (req, res) => {
   res.json(getStartParameter(req));
 });
 
-// Эндпоинт для проверки статуса сервера
+// ОСНОВНОЙ МАРШРУТ: именно его запрашивает MSX
+app.get('/msx/start.json', (req, res) => {
+  console.log('[MSX] Запрос start.json получен');
+  res.json(getStartParameter(req));
+});
+
+// Дополнительно, на случай если запросят без .json
+app.get('/msx/start', (req, res) => {
+  res.json(getStartParameter(req));
+});
+
+// Статус сервера
 app.get('/status', (req, res) => {
   res.json({ success: true, status: 'online', timestamp: Date.now() });
 });
 
-// Обработка 404
+// ---------- Обработка 404 (должна быть ПОСЛЕ всех конкретных маршрутов) ----------
 app.use((req, res) => {
+  console.log(`[404] ${req.method} ${req.url}`);
   res.status(404).json({ success: false, error: 'Endpoint not found' });
 });
 
@@ -101,5 +122,5 @@ app.use((err, req, res, next) => {
 // Запуск
 app.listen(PORT, () => {
   console.log(`✅ Media Station X сервер запущен на http://localhost:${PORT}`);
-  console.log(`📡 Стартовый параметр доступен: http://localhost:${PORT}/start`);
+  console.log(`📡 Стартовый параметр MSX: http://localhost:${PORT}/msx/start.json`);
 });
