@@ -1,0 +1,5 @@
+{
+  "name": "HDKinoteatr Media",
+  "version": "1.0",
+  "parameter": "content:https://hdkinoteatr-msx.onrender.com/msx/content.json"
+}
