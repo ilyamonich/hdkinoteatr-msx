@@ -34,49 +34,50 @@ app.use((req, res, next) => {
 const apiRouter = require('./routes/api');
 app.use('/api', apiRouter);
 
-// ---------- ПРАВИЛЬНЫЙ СТАРТОВЫЙ ПАРАМЕТР (ОБЪЕКТ, НЕ МАССИВ) ----------
-const getStartParameter = (req) => ({
-  name: "hdkinoteatr_main",
-  version: "1.0",
-  title: "HDKinoteatr Media",
-  menu: [
-    {
-      id: "search",
-      title: "🔍 Поиск фильмов и сериалов",
-      icon: "search",
-      action: "input",
-      input: {
-        prompt: "Введите название",
-        submit: "/api/search?q={query}"
+// ---------- ВОЗВРАЩАЕМ МАССИВ (как ожидает MSX) ----------
+const getStartParameter = (req) => [
+  {
+    name: "hdkinoteatr_main",
+    title: "HDKinoteatr Media",
+    menu: [
+      {
+        id: "search",
+        title: "🔍 Поиск фильмов и сериалов",
+        icon: "search",
+        action: "input",
+        input: {
+          prompt: "Введите название",
+          submit: "/api/search?q={query}"
+        }
+      },
+      {
+        id: "popular",
+        title: "🔥 Популярное",
+        icon: "trending_up",
+        action: "load",
+        url: "/api/popular"
+      },
+      {
+        id: "movies",
+        title: "🎬 Фильмы",
+        icon: "movie",
+        action: "load",
+        url: "/api/category/movies"
+      },
+      {
+        id: "series",
+        title: "📺 Сериалы",
+        icon: "tv",
+        action: "load",
+        url: "/api/category/series"
       }
-    },
-    {
-      id: "popular",
-      title: "🔥 Популярное",
-      icon: "trending_up",
-      action: "load",
-      url: "/api/popular"
-    },
-    {
-      id: "movies",
-      title: "🎬 Фильмы",
-      icon: "movie",
-      action: "load",
-      url: "/api/category/movies"
-    },
-    {
-      id: "series",
-      title: "📺 Сериалы",
-      icon: "tv",
-      action: "load",
-      url: "/api/category/series"
+    ],
+    settings: {
+      serverUrl: `${req.protocol}://${req.get('host')}`,
+      cacheTTL: 300
     }
-  ],
-  settings: {
-    serverUrl: `${req.protocol}://${req.get('host')}`,
-    cacheTTL: 300
   }
-});
+];
 
 // Маршруты для MSX
 app.get('/', (req, res) => {
@@ -91,13 +92,10 @@ app.get('/start', (req, res) => {
 
 app.get('/msx/start.json', (req, res) => {
   console.log('[MSX] Запрос start.json получен');
+  const response = getStartParameter(req);
+  console.log('[MSX] Ответ:', JSON.stringify(response, null, 2));
   res.setHeader('Content-Type', 'application/json');
-  res.json(getStartParameter(req));
-});
-
-app.get('/msx/start', (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.json(getStartParameter(req));
+  res.json(response);
 });
 
 app.get('/status', (req, res) => {
