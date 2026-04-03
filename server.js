@@ -21,59 +21,49 @@ app.use((req, res, next) => {
 const apiRouter = require('./routes/api');
 app.use('/api', apiRouter);
 
-// ---------- БАЗОВЫЙ URL ВАШЕГО СЕРВЕРА ----------
 const SERVER_URL = "https://hdkinoteatr-msx.onrender.com";
 
 // ---------- СТАРТОВЫЙ ПАРАМЕТР ----------
 const startParameter = {
   name: "HDKinoteatr Media",
-  image: `${SERVER_URL}/icon.png`, // можно заменить на реальную иконку или удалить
+  image: `${SERVER_URL}/icon.png`, // можно удалить, если нет иконки
   version: "1.0",
   parameter: `content:${SERVER_URL}/api/main`
 };
 
-// ---------- ОСНОВНОЙ КОНТЕНТ (обёрнут в поле "content") ----------
+// ---------- ОСНОВНОЙ КОНТЕНТ (список элементов, как в рабочем примере) ----------
 app.get('/api/main', (req, res) => {
   const mainContent = {
-    content: {   // <-- ЭТО ПОЛЕ ОБЯЗАТЕЛЬНО
-      menu: [
-        {
-          id: "search",
-          title: "🔍 Поиск фильмов и сериалов",
-          icon: "search",
-          action: "input",
-          input: {
-            prompt: "Введите название",
-            submit: "/api/search?q={query}"
-          }
-        },
-        {
-          id: "popular",
-          title: "🔥 Популярное",
-          icon: "trending_up",
-          action: "load",
-          url: "/api/popular"
-        },
-        {
-          id: "movies",
-          title: "🎬 Фильмы",
-          icon: "movie",
-          action: "load",
-          url: "/api/category/movies"
-        },
-        {
-          id: "series",
-          title: "📺 Сериалы",
-          icon: "tv",
-          action: "load",
-          url: "/api/category/series"
+    type: "list",
+    items: [
+      {
+        label: "🔍 Поиск фильмов и сериалов",
+        icon: "search",
+        action: "input",
+        input: {
+          prompt: "Введите название",
+          submit: "/api/search?q={query}"
         }
-      ],
-      settings: {
-        serverUrl: SERVER_URL,
-        cacheTTL: 300
+      },
+      {
+        label: "🔥 Популярное",
+        icon: "trending_up",
+        action: "load",
+        url: "/api/popular"
+      },
+      {
+        label: "🎬 Фильмы",
+        icon: "movie",
+        action: "load",
+        url: "/api/category/movies"
+      },
+      {
+        label: "📺 Сериалы",
+        icon: "tv",
+        action: "load",
+        url: "/api/category/series"
       }
-    }
+    ]
   };
   res.json(mainContent);
 });
@@ -82,11 +72,6 @@ app.get('/api/main', (req, res) => {
 app.get(['/', '/start', '/msx/start', '/msx/start.json'], (req, res) => {
   console.log('[MSX] Запрос start parameter');
   res.setHeader('Content-Type', 'application/json');
-  res.json(startParameter);
-});
-
-// Отладка
-app.get('/debug', (req, res) => {
   res.json(startParameter);
 });
 
