@@ -1,31 +1,43 @@
 {
   "type": "list",
+  "template": {
+    "type": "control",
+    "layout": "0,0,8,1"
+  },
   "items": [
     {
+      "type": "control",
+      "offset": "0,0,0,0",
+      "action": "input",
       "label": "🔍 Поиск фильмов и сериалов",
       "icon": "search",
-      "action": "input",
       "input": {
         "prompt": "Введите название",
         "submit": "/api/search?q={query}"
       }
     },
     {
+      "type": "control",
+      "offset": "0,1,0,0",
+      "action": "load",
       "label": "🔥 Популярное",
       "icon": "trending_up",
-      "action": "load",
       "url": "/api/popular"
     },
     {
+      "type": "control",
+      "offset": "0,2,0,0",
+      "action": "load",
       "label": "🎬 Фильмы",
       "icon": "movie",
-      "action": "load",
       "url": "/api/category/movies"
     },
     {
+      "type": "control",
+      "offset": "0,3,0,0",
+      "action": "load",
       "label": "📺 Сериалы",
       "icon": "tv",
-      "action": "load",
       "url": "/api/category/series"
     }
   ]
