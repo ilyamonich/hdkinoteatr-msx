@@ -22,55 +22,57 @@ const apiRouter = require('./routes/api');
 app.use('/api', apiRouter);
 
 // ---------- БАЗОВЫЙ URL ВАШЕГО СЕРВЕРА ----------
-const SERVER_URL = "https://hdkinoteatr-msx.onrender.com"; // замените на свой URL
+const SERVER_URL = "https://hdkinoteatr-msx.onrender.com";
 
 // ---------- СТАРТОВЫЙ ПАРАМЕТР ----------
 const startParameter = {
   name: "HDKinoteatr Media",
   image: `${SERVER_URL}/icon.png`, // можно заменить на реальную иконку или удалить
   version: "1.0",
-  parameter: `content:${SERVER_URL}/api/main`   // ✅ АБСОЛЮТНЫЙ URL
+  parameter: `content:${SERVER_URL}/api/main`
 };
 
-// ---------- ОСНОВНОЙ КОНТЕНТ (меню) ----------
+// ---------- ОСНОВНОЙ КОНТЕНТ (обёрнут в поле "content") ----------
 app.get('/api/main', (req, res) => {
   const mainContent = {
-    menu: [
-      {
-        id: "search",
-        title: "🔍 Поиск фильмов и сериалов",
-        icon: "search",
-        action: "input",
-        input: {
-          prompt: "Введите название",
-          submit: "/api/search?q={query}"
+    content: {   // <-- ЭТО ПОЛЕ ОБЯЗАТЕЛЬНО
+      menu: [
+        {
+          id: "search",
+          title: "🔍 Поиск фильмов и сериалов",
+          icon: "search",
+          action: "input",
+          input: {
+            prompt: "Введите название",
+            submit: "/api/search?q={query}"
+          }
+        },
+        {
+          id: "popular",
+          title: "🔥 Популярное",
+          icon: "trending_up",
+          action: "load",
+          url: "/api/popular"
+        },
+        {
+          id: "movies",
+          title: "🎬 Фильмы",
+          icon: "movie",
+          action: "load",
+          url: "/api/category/movies"
+        },
+        {
+          id: "series",
+          title: "📺 Сериалы",
+          icon: "tv",
+          action: "load",
+          url: "/api/category/series"
         }
-      },
-      {
-        id: "popular",
-        title: "🔥 Популярное",
-        icon: "trending_up",
-        action: "load",
-        url: "/api/popular"
-      },
-      {
-        id: "movies",
-        title: "🎬 Фильмы",
-        icon: "movie",
-        action: "load",
-        url: "/api/category/movies"
-      },
-      {
-        id: "series",
-        title: "📺 Сериалы",
-        icon: "tv",
-        action: "load",
-        url: "/api/category/series"
+      ],
+      settings: {
+        serverUrl: SERVER_URL,
+        cacheTTL: 300
       }
-    ],
-    settings: {
-      serverUrl: SERVER_URL,
-      cacheTTL: 300
     }
   };
   res.json(mainContent);
