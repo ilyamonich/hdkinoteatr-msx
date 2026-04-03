@@ -1,16 +1,13 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const path = require('path');
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Разрешаем CORS для всех
 app.use(cors());
 app.options('*', cors());
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -20,13 +17,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// Подключаем API (поиск, популярное и т.д.)
+// API роуты (поиск, популярное и т.д.)
 const apiRouter = require('./routes/api');
 app.use('/api', apiRouter);
 
-// ---------- ПРАВИЛЬНЫЙ СТАРТОВЫЙ ПАРАМЕТР (ОБЪЕКТ, НЕ МАССИВ) ----------
+// ---------- СТАРТОВЫЙ ПАРАМЕТР (ОБЪЕКТ) ----------
 const startParameter = {
-  name: "hdkinoteatr_main",   // КЛЮЧЕВОЕ ПОЛЕ – обязательно
+  name: "hdkinoteatr_main",        // обязательно
+  version: "1.0",                  // обязательно – исправляет текущую ошибку
   title: "HDKinoteatr Media",
   menu: [
     {
@@ -62,19 +60,19 @@ const startParameter = {
     }
   ],
   settings: {
-    serverUrl: "https://hdkinoteatr-msx.onrender.com",  // HTTPS!
+    serverUrl: "https://hdkinoteatr-msx.onrender.com",
     cacheTTL: 300
   }
 };
 
-// Все возможные пути для start parameter
+// Все возможные пути для запроса стартового параметра
 app.get(['/', '/start', '/msx/start', '/msx/start.json'], (req, res) => {
   console.log('[MSX] Запрос start parameter');
   res.setHeader('Content-Type', 'application/json');
   res.json(startParameter);
 });
 
-// Отладочный эндпоинт (проверьте в браузере)
+// Отладочный эндпоинт
 app.get('/debug', (req, res) => {
   res.json(startParameter);
 });
