@@ -14,7 +14,6 @@ const cacheDir = path.join(__dirname, 'cache');
 if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
 
 // ---------- Middleware ----------
-// Настройка CORS для любых источников (для теста)
 const corsOptions = {
   origin: '*',
   methods: ['GET', 'POST', 'OPTIONS'],
@@ -27,7 +26,7 @@ app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Логирование всех запросов (полезно для отладки)
+// Логирование всех запросов
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
@@ -39,6 +38,7 @@ app.use('/api', apiRouter);
 
 // ---------- Функция формирования стартового параметра для MSX ----------
 const getStartParameter = (req) => ({
+  name: "hdkinoteatr_main",          // обязательно для MSX
   version: "1.0",
   title: "HDKinoteatr Media",
   menu: [
@@ -81,12 +81,10 @@ const getStartParameter = (req) => ({
 });
 
 // ---------- Маршруты для Media Station X ----------
-// Корень (может использоваться для проверки)
 app.get('/', (req, res) => {
   res.json(getStartParameter(req));
 });
 
-// /start (некоторые версии MSX)
 app.get('/start', (req, res) => {
   res.json(getStartParameter(req));
 });
@@ -97,17 +95,15 @@ app.get('/msx/start.json', (req, res) => {
   res.json(getStartParameter(req));
 });
 
-// Дополнительно, на случай если запросят без .json
 app.get('/msx/start', (req, res) => {
   res.json(getStartParameter(req));
 });
 
-// Статус сервера
 app.get('/status', (req, res) => {
   res.json({ success: true, status: 'online', timestamp: Date.now() });
 });
 
-// ---------- Обработка 404 (должна быть ПОСЛЕ всех конкретных маршрутов) ----------
+// ---------- Обработка 404 ----------
 app.use((req, res) => {
   console.log(`[404] ${req.method} ${req.url}`);
   res.status(404).json({ success: false, error: 'Endpoint not found' });
