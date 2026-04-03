@@ -21,53 +21,55 @@ app.use((req, res, next) => {
 const apiRouter = require('./routes/api');
 app.use('/api', apiRouter);
 
-// ---------- СТАРТОВЫЙ ПАРАМЕТР (ОБЪЕКТ) ----------
-const startParameter = {
-  name: "hdkinoteatr_main",        // обязательно
-  version: "1.0",                  // обязательно – исправляет текущую ошибку
-  title: "HDKinoteatr Media",
-  menu: [
-    {
-      id: "search",
-      title: "🔍 Поиск фильмов и сериалов",
-      icon: "search",
-      action: "input",
-      input: {
-        prompt: "Введите название",
-        submit: "/api/search?q={query}"
+// ---------- СТАРТОВЫЙ ПАРАМЕТР (МАССИВ) ----------
+const startParameter = [
+  {
+    name: "hdkinoteatr_main",        // обязательно
+    version: "1.0",                  // обязательно
+    title: "HDKinoteatr Media",
+    menu: [
+      {
+        id: "search",
+        title: "🔍 Поиск фильмов и сериалов",
+        icon: "search",
+        action: "input",
+        input: {
+          prompt: "Введите название",
+          submit: "/api/search?q={query}"
+        }
+      },
+      {
+        id: "popular",
+        title: "🔥 Популярное",
+        icon: "trending_up",
+        action: "load",
+        url: "/api/popular"
+      },
+      {
+        id: "movies",
+        title: "🎬 Фильмы",
+        icon: "movie",
+        action: "load",
+        url: "/api/category/movies"
+      },
+      {
+        id: "series",
+        title: "📺 Сериалы",
+        icon: "tv",
+        action: "load",
+        url: "/api/category/series"
       }
-    },
-    {
-      id: "popular",
-      title: "🔥 Популярное",
-      icon: "trending_up",
-      action: "load",
-      url: "/api/popular"
-    },
-    {
-      id: "movies",
-      title: "🎬 Фильмы",
-      icon: "movie",
-      action: "load",
-      url: "/api/category/movies"
-    },
-    {
-      id: "series",
-      title: "📺 Сериалы",
-      icon: "tv",
-      action: "load",
-      url: "/api/category/series"
+    ],
+    settings: {
+      serverUrl: "https://hdkinoteatr-msx.onrender.com",
+      cacheTTL: 300
     }
-  ],
-  settings: {
-    serverUrl: "https://hdkinoteatr-msx.onrender.com",
-    cacheTTL: 300
   }
-};
+];
 
-// Все возможные пути для запроса стартового параметра
+// Маршруты для запроса стартового параметра
 app.get(['/', '/start', '/msx/start', '/msx/start.json'], (req, res) => {
-  console.log('[MSX] Запрос start parameter');
+  console.log('[MSX] Запрос start parameter (массив)');
   res.setHeader('Content-Type', 'application/json');
   res.json(startParameter);
 });
