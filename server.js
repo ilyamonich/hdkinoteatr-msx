@@ -9,11 +9,10 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Создаём папку для кэша (если нужна)
 const cacheDir = path.join(__dirname, 'cache');
 if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
 
-// ---------- Middleware ----------
+// Middleware
 const corsOptions = {
   origin: '*',
   methods: ['GET', 'POST', 'OPTIONS'],
@@ -26,76 +25,85 @@ app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Логирование всех запросов
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
 
-// Подключаем API роуты
+// API роуты
 const apiRouter = require('./routes/api');
 app.use('/api', apiRouter);
 
-// ---------- Функция формирования стартового параметра для MSX ----------
-const getStartParameter = (req) => ({
-  name: "hdkinoteatr_main",          // обязательно для MSX
-  version: "1.0",
-  title: "HDKinoteatr Media",
-  menu: [
-    {
-      id: "search",
-      title: "🔍 Поиск фильмов и сериалов",
-      icon: "search",
-      action: "input",
-      input: {
-        prompt: "Введите название",
-        submit: "/api/search?q={query}"
+// ---------- ПРАВИЛЬНЫЙ СТАРТОВЫЙ ПАРАМЕТР (МАССИВ) ----------
+const getStartParameter = (req) => [
+  {
+    "name": "hdkinoteatr_main",
+    "title": "HDKinoteatr Media",
+    "menu": [
+      {
+        "id": "search",
+        "title": "🔍 Поиск фильмов и сериалов",
+        "icon": "search",
+        "action": "input",
+        "input": {
+          "prompt": "Введите название",
+          "submit": "/api/search?q={query}"
+        }
+      },
+      {
+        "id": "popular",
+        "title": "🔥 Популярное",
+        "icon": "trending_up",
+        "action": "load",
+        "url": "/api/popular"
+      },
+      {
+        "id": "movies",
+        "title": "🎬 Фильмы",
+        "icon": "movie",
+        "action": "load",
+        "url": "/api/category/movies"
+      },
+      {
+        "id": "series",
+        "title": "📺 Сериалы",
+        "icon": "tv",
+        "action": "load",
+        "url": "/api/category/series"
       }
-    },
-    {
-      id: "popular",
-      title: "🔥 Популярное",
-      icon: "trending_up",
-      action: "load",
-      url: "/api/popular"
-    },
-    {
-      id: "movies",
-      title: "🎬 Фильмы",
-      icon: "movie",
-      action: "load",
-      url: "/api/category/movies"
-    },
-    {
-      id: "series",
-      title: "📺 Сериалы",
-      icon: "tv",
-      action: "load",
-      url: "/api/category/series"
+    ],
+    "settings": {
+      "serverUrl": `${req.protocol}://${req.get('host')}`,
+      "cacheTTL": 300
     }
-  ],
-  settings: {
-    serverUrl: `${req.protocol}://${req.get('host')}`,
-    cacheTTL: 300
   }
-});
+];
 
-// ---------- Маршруты для Media Station X ----------
+// Маршруты для MSX
 app.get('/', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
   res.json(getStartParameter(req));
 });
 
 app.get('/start', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
   res.json(getStartParameter(req));
 });
 
-// ОСНОВНОЙ МАРШРУТ: именно его запрашивает MSX
 app.get('/msx/start.json', (req, res) => {
   console.log('[MSX] Запрос start.json получен');
+  res.setHeader('Content-Type', 'application/json');
   res.json(getStartParameter(req));
 });
 
 app.get('/msx/start', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.json(getStartParameter(req));
+});
+
+// Отладочный эндпоинт для проверки JSON
+app.get('/debug', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
   res.json(getStartParameter(req));
 });
 
@@ -103,20 +111,19 @@ app.get('/status', (req, res) => {
   res.json({ success: true, status: 'online', timestamp: Date.now() });
 });
 
-// ---------- Обработка 404 ----------
+// 404
 app.use((req, res) => {
   console.log(`[404] ${req.method} ${req.url}`);
   res.status(404).json({ success: false, error: 'Endpoint not found' });
 });
 
-// Глобальный обработчик ошибок
+// Ошибки
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
   res.status(500).json({ success: false, error: 'Внутренняя ошибка сервера' });
 });
 
-// Запуск
 app.listen(PORT, () => {
-  console.log(`✅ Media Station X сервер запущен на http://localhost:${PORT}`);
-  console.log(`📡 Стартовый параметр MSX: http://localhost:${PORT}/msx/start.json`);
+  console.log(`✅ Сервер запущен на http://localhost:${PORT}`);
+  console.log(`📡 Стартовый параметр: http://localhost:${PORT}/msx/start.json`);
 });
