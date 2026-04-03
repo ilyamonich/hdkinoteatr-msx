@@ -21,12 +21,15 @@ app.use((req, res, next) => {
 const apiRouter = require('./routes/api');
 app.use('/api', apiRouter);
 
-// ---------- СТАРТОВЫЙ ПАРАМЕТР (с префиксом content:) ----------
+// ---------- БАЗОВЫЙ URL ВАШЕГО СЕРВЕРА ----------
+const SERVER_URL = "https://hdkinoteatr-msx.onrender.com"; // замените на свой URL
+
+// ---------- СТАРТОВЫЙ ПАРАМЕТР ----------
 const startParameter = {
   name: "HDKinoteatr Media",
-  image: "https://hdkinoteatr-msx.onrender.com/icon.png", // можно заменить на реальную иконку
+  image: `${SERVER_URL}/icon.png`, // можно заменить на реальную иконку или удалить
   version: "1.0",
-  parameter: "content:/api/main"   // ✅ ОБЯЗАТЕЛЬНЫЙ ПРЕФИКС
+  parameter: `content:${SERVER_URL}/api/main`   // ✅ АБСОЛЮТНЫЙ URL
 };
 
 // ---------- ОСНОВНОЙ КОНТЕНТ (меню) ----------
@@ -66,7 +69,7 @@ app.get('/api/main', (req, res) => {
       }
     ],
     settings: {
-      serverUrl: "https://hdkinoteatr-msx.onrender.com",
+      serverUrl: SERVER_URL,
       cacheTTL: 300
     }
   };
@@ -96,5 +99,5 @@ app.use((req, res) => {
 
 app.listen(PORT, () => {
   console.log(`✅ Сервер запущен на порту ${PORT}`);
-  console.log(`👉 Стартовый параметр: https://hdkinoteatr-msx.onrender.com/msx/start.json`);
+  console.log(`👉 Стартовый параметр: ${SERVER_URL}/msx/start.json`);
 });
