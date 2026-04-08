@@ -1,5 +1,6 @@
 {
   "type": "list",
+  "title": "HDKinoTeatr",
   "template": {
     "type": "control",
     "layout": "0,0,8,1"
@@ -8,37 +9,29 @@
     {
       "type": "control",
       "offset": "0,0,0,0",
-      "action": "input",
-      "label": "🔍 Поиск фильмов и сериалов",
-      "icon": "search",
-      "input": {
-        "prompt": "Введите название",
-        "submit": "/api/search?q={query}"
-      }
+      "action": "load",
+      "label": "🎬 Все фильмы",
+      "icon": "movie",
+      "url": "/api/movies"
     },
     {
       "type": "control",
       "offset": "0,1,0,0",
       "action": "load",
-      "label": "🔥 Популярное",
-      "icon": "trending_up",
-      "url": "/api/popular"
+      "label": "📂 Категории",
+      "icon": "folder",
+      "url": "/api/categories"
     },
     {
       "type": "control",
       "offset": "0,2,0,0",
-      "action": "load",
-      "label": "🎬 Фильмы",
-      "icon": "movie",
-      "url": "/api/category/movies"
-    },
-    {
-      "type": "control",
-      "offset": "0,3,0,0",
-      "action": "load",
-      "label": "📺 Сериалы",
-      "icon": "tv",
-      "url": "/api/category/series"
+      "action": "input",
+      "label": "🔍 Поиск",
+      "icon": "search",
+      "input": {
+        "prompt": "Введите название фильма",
+        "submit": "/api/search?q={query}"
+      }
     }
   ]
 }
